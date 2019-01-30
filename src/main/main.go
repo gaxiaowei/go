@@ -1,41 +1,24 @@
 package main
 
-import (
-	"fmt"
-	"net"
-)
+import "net/http"
 
-func handleConn(conn net.Conn) {
-	defer conn.Close()
-	var buf = make([]byte, 1024)
+type demo struct{}
 
-	fmt.Println(conn.RemoteAddr())
+func (*demo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.RequestURI == "/favicon.ico" {
+		w.WriteHeader(404)
 
-	for {
-		n, err := conn.Read(buf)
-		if err != nil {
-			fmt.Println("conn read error:", err)
-			return
-		}
-
-		fmt.Printf("read %d bytes, content is %s\n", n, string(buf[:n]))
-	}
-}
-
-func main() {
-	l, err := net.Listen("tcp", ":8001")
-	if err != nil {
-		fmt.Println("listen error:", err)
 		return
 	}
 
-	for {
-		conn, err := l.Accept()
-		if err != nil {
-			fmt.Println("accept error:", err)
-			return
-		}
+	w.Write([]byte("this is a demo http handler" + r.RequestURI))
+}
 
-		go handleConn(conn)
+func main() {
+	httpServer := &http.Server{
+		Addr: ":5000",
+		Handler:&demo{},
 	}
+
+	httpServer.ListenAndServe()
 }
